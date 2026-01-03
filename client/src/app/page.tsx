@@ -1,158 +1,183 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
-import { DashboardCard } from '@/components/DashboardCard';
-import { RiskBubbleChart } from '@/components/charts/RiskBubbleChart';
-import { ProgressBar } from '@/components/ProgressBar';
-import { Users, AlertCircle, Activity, TrendingDown, RefreshCw } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { GraduationCap, Lock, User, ShieldCheck, Mail } from "lucide-react";
+import api from "@/lib/api";
 
-export default function AdminDashboard() {
-  const [students, setStudents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function LoginPage() {
+  const router = useRouter();
+  const [role, setRole] = useState<'student' | 'admin'>('student');
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+  // Student Form State
+  const [studentId, setStudentId] = useState("");
+  const [email, setEmail] = useState("");
 
-  const fetchStudents = async () => {
+  // Admin Form State
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
     try {
-      const res = await api.get('/students');
-      setStudents(res.data);
-    } catch (error) {
-      console.error('Failed to fetch students', error);
+      if (role === 'student') {
+        const res = await api.post('/auth/login', { studentId, email });
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user)); // Optional: store basics
+        router.push("/student-dashboard");
+      } else {
+        const res = await api.post('/auth/admin/login', { username, password });
+        localStorage.setItem('token', res.data.token);
+        router.push("/admin-dashboard");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-white">Loading dashboard...</div>;
-
-  // KPIs
-  const totalStudents = students.length;
-  const highRiskStudents = students.filter(s => s.riskLevel === 'HIGH').length;
-  const mediumRiskStudents = students.filter(s => s.riskLevel === 'MEDIUM').length;
-  const lowRiskStudents = students.filter(s => s.riskLevel === 'LOW').length;
-  const avgRiskScore = students.length ? Math.round(students.reduce((acc, s) => acc + s.riskScore, 0) / students.length) : 0;
-  const decliningGradesCount = students.filter(s => s.gradeTrend === 'Declining').length;
-
   return (
-    <main className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Dashboard Overview</h1>
-          <p className="text-sm md:text-base text-gray-400">Monitor student engagement and burnout risks in real-time.</p>
-        </div>
-        <button
-          onClick={fetchStudents}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0F131E] border border-white/10 text-sm text-gray-300 hover:text-white transition-colors"
-        >
-          <RefreshCw size={14} />
-          <span className="hidden sm:inline">Last updated: Just now</span>
-        </button>
-      </div>
+    <main className="min-h-screen flex items-center justify-center bg-[#060910] p-4 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full" />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPI_Card
-          title="Total Students"
-          value={totalStudents}
-          icon={<Users size={24} className="text-blue-400" />}
-          trend="+12% vs last month"
-          trendPositive={true}
-          iconBg="bg-blue-500/10"
-        />
-        <KPI_Card
-          title="High Risk Alerts"
-          value={highRiskStudents}
-          icon={<AlertCircle size={24} className="text-red-400" />}
-          trend="-5% vs last month"
-          trendPositive={true} // Less risk is positive
-          iconBg="bg-red-500/10"
-        />
-        <KPI_Card
-          title="Avg. Risk Score"
-          value={avgRiskScore}
-          icon={<Activity size={24} className="text-purple-400" />}
-          trend="-0.4 vs last month"
-          trendPositive={true}
-          iconBg="bg-purple-500/10"
-        />
-        <KPI_Card
-          title="Declining Grades"
-          value={decliningGradesCount}
-          icon={<TrendingDown size={24} className="text-orange-400" />}
-          trend="-2% vs last month"
-          trendPositive={true}
-          iconBg="bg-orange-500/10"
-        />
-      </div>
-
-      {/* Charts Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Risk Landscape - Takes 2 cols */}
-        <div className="lg:col-span-2">
-          <DashboardCard title="Risk Landscape Analysis" className="h-[500px] flex flex-col">
-            <div className="flex justify-end gap-4 mb-4 text-xs">
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span> High</div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium</div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span> Low</div>
-            </div>
-            <div className="flex-1 w-full min-h-0 relative">
-              <RiskBubbleChart students={students} />
-            </div>
-          </DashboardCard>
+      <div className="w-full max-w-md bg-[#0B0F19] border border-white/10 p-8 rounded-2xl shadow-xl relative z-10 backdrop-blur-xl">
+        <div className="flex flex-col items-center mb-8">
+          <div className="h-12 w-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-indigo-600/20">
+            <GraduationCap size={28} />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+          <p className="text-gray-400 text-sm mt-2">Sign in to access your account</p>
         </div>
 
-        {/* Risk Distribution - Takes 1 col */}
-        <div className="lg:col-span-1">
-          <DashboardCard title="Risk Distribution" className="h-[500px]">
-            <div className="flex flex-col justify-center h-full space-y-8 px-2">
-              <RiskDistRow label="Low Risk" count={lowRiskStudents} total={totalStudents} color="success" />
-              <RiskDistRow label="Medium Risk" count={mediumRiskStudents} total={totalStudents} color="warning" />
-              <RiskDistRow label="High Risk" count={highRiskStudents} total={totalStudents} color="danger" />
-            </div>
-          </DashboardCard>
+        {/* Role Toggle */}
+        <div className="flex bg-[#151926] p-1 rounded-lg border border-white/5 mb-6">
+          <button
+            onClick={() => setRole('student')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'student' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            <User size={16} />
+            Student
+          </button>
+          <button
+            onClick={() => setRole('admin')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'admin' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+              }`}
+          >
+            <ShieldCheck size={16} />
+            Admin
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          {role === 'student' ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Student ID</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="e.g. STU12345"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    required={role === 'student'}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="email"
+                    placeholder="student@university.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    required={role === 'student'}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Username</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Admin Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    required={role === 'admin'}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    required={role === 'admin'}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              role === 'student' ? 'Student Login' : 'Admin Login'
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          {role === 'admin' ? (
+            <p className="text-xs text-gray-500">
+              Use <span className="text-white font-mono">admin / admin</span> for demo.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-500">
+              Forgot credentials? Contact your administrator.
+            </p>
+          )}
         </div>
       </div>
     </main>
   );
-}
-
-function KPI_Card({ title, value, icon, trend, trendPositive, iconBg }: any) {
-  return (
-    <div className="bg-[#0F131E] border border-white/5 rounded-xl p-6 relative overflow-hidden group">
-      {/* Hover Glow Effect */}
-      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full ${iconBg} opacity-20 blur-2xl group-hover:opacity-40 transition-opacity`}></div>
-
-      <div className="flex justify-between items-start mb-4">
-        <p className="text-gray-400 text-sm font-medium">{title}</p>
-        <div className={`p-3 rounded-xl ${iconBg} border border-white/5`}>
-          {icon}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-3xl font-bold text-white">{value}</h3>
-        <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${trendPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-          {trendPositive ? '↘' : '↗'} {trend}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RiskDistRow({ label, count, total, color }: any) {
-  const percentage = Math.round((count / total) * 100) || 0;
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-2">
-        <span className="text-white font-medium">{label}</span>
-        <span className="text-white font-bold">{count}</span>
-      </div>
-      <ProgressBar value={percentage} variant={color} className="h-3 mb-2" />
-      <div className="text-right text-xs text-gray-500">{percentage}% of total</div>
-    </div>
-  )
 }

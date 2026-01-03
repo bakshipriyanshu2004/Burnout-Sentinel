@@ -11,6 +11,15 @@ class DataStore {
     private initialize() {
         console.log('Initializing in-memory data store...');
         this.students = generateStudents(50);
+
+        // Ensure we have at least one student and override it to be the Demo Student
+        if (this.students.length > 0) {
+            this.students[0].name = "Priyanshu Bakshi";
+            this.students[0].studentId = "STD2506";
+            this.students[0].email = "bakshi@gmail.com";
+            // Keep other generated data (logs, grades) so risk engine works!
+        }
+
         console.log(`Generated ${this.students.length} students.`);
     }
 

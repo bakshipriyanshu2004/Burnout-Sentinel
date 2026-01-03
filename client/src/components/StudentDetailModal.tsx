@@ -35,37 +35,47 @@ interface StudentDetailModalProps {
 export function StudentDetailModal({ student, onClose }: StudentDetailModalProps) {
     if (!student) return null;
 
-    // Local state for randomized data (per user request for "random graph when i click")
-    // We use a seed or just run it on mount.
-    const [chartValues, setChartValues] = React.useState<number[]>([]);
-    const [latencyState, setLatencyState] = React.useState<{ text: string, color: string }>({ text: '...', color: 'text-gray-400' });
-    const [attendanceText, setAttendanceText] = React.useState('...');
+    // 1. Chart Data from Activity Logs
+    const chartValues = React.useMemo(() => {
+        if (!student.activityLogs || student.activityLogs.length === 0) return Array(30).fill(0);
 
-    React.useEffect(() => {
-        // 1. Generate Random Graph Data (30 days)
-        // Create a smooth-ish random curve
-        const newValues = [];
-        let current = Math.floor(Math.random() * 60) + 20; // Start somewhere 20-80
-        for (let i = 0; i < 30; i++) {
-            const move = Math.floor(Math.random() * 30) - 15; // -15 to +15
-            current = Math.max(10, Math.min(100, current + move));
-            newValues.push(current);
-        }
-        setChartValues(newValues);
+        // Sort logs by date just in case
+        const sortedLogs = [...student.activityLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // 2. Random Submission Latency
-        const statuses = [
-            { text: 'On Time', color: 'text-green-400' },
-            { text: 'Occasional Late', color: 'text-yellow-400' },
-            { text: 'Consistent Late', color: 'text-red-400' }
-        ];
-        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-        setLatencyState(randomStatus);
+        // Take last 30 or fill
+        const last30 = sortedLogs.slice(-30);
 
-        // 3. Random Attendance (Login Frequency)
-        const attendances = ['Daily', 'Frequent', 'Irregular', 'Rare'];
-        setAttendanceText(attendances[Math.floor(Math.random() * attendances.length)]);
+        return last30.map(log => {
+            // Heuristic for daily engagement score:
+            // Max ~150 (120 min video + 3 posts) -> 100
+            const rawScore = (log.videoWatchMinutes) + (log.forumPosts * 10) + (log.loginCount * 5);
+            return Math.min(100, Math.round((rawScore / 150) * 100));
+        });
+    }, [student]);
 
+    // 2. Submission Latency from Assignments
+    const latencyState = React.useMemo(() => {
+        if (!student.assignments || student.assignments.length === 0) return { text: 'No Data', color: 'text-gray-400' };
+
+        const recent = student.assignments.slice(-5);
+        const lateCount = recent.filter((a: any) => !a.submittedDate || new Date(a.submittedDate) > new Date(a.dueDate)).length;
+
+        if (lateCount === 0) return { text: 'On Time', color: 'text-green-400' };
+        if (lateCount <= 2) return { text: 'Occasional Late', color: 'text-yellow-400' };
+        return { text: 'Consistent Late', color: 'text-red-400' };
+    }, [student]);
+
+    // 3. Attendance from Activity Logs
+    const attendanceText = React.useMemo(() => {
+        if (!student.activityLogs || student.activityLogs.length === 0) return 'Unknown';
+
+        const last14 = student.activityLogs.slice(-14);
+        const activeDays = last14.filter((l: any) => l.loginCount > 0).length;
+
+        if (activeDays >= 12) return 'Daily';
+        if (activeDays >= 8) return 'Frequent';
+        if (activeDays >= 4) return 'Irregular';
+        return 'Rare';
     }, [student]);
 
     // Use dates from actual logs if available, or just generate last 30 days
@@ -139,8 +149,8 @@ export function StudentDetailModal({ student, onClose }: StudentDetailModalProps
                             <p className="text-gray-400 text-sm mb-2">{student.email}</p>
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ring-1 ring-inset ${student.riskLevel === 'HIGH' ? 'bg-red-500/10 text-red-500 ring-red-500/20' :
-                                        student.riskLevel === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-500 ring-yellow-500/20' :
-                                            'bg-green-500/10 text-green-500 ring-green-500/20'
+                                    student.riskLevel === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-500 ring-yellow-500/20' :
+                                        'bg-green-500/10 text-green-500 ring-green-500/20'
                                     }`}>
                                     {student.riskLevel} RISK
                                 </span>
@@ -150,9 +160,47 @@ export function StudentDetailModal({ student, onClose }: StudentDetailModalProps
                             </div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors shrink-0">
-                        <X size={24} />
-                    </button>
+                    <div className="flex gap-2">
+                        {student.riskLevel === 'HIGH' && (
+                            <button
+                                onClick={() => {
+                                    fetch('http://localhost:3001/api/calendar/meet', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ studentId: student.studentId })
+                                    })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            window.open(data.meetLink, '_blank');
+                                        })
+                                        .catch(err => console.error(err));
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors shadow-lg shadow-red-500/20 animate-pulse"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                                Instant Counseling
+                            </button>
+                        )}
+                        <button
+                            onClick={() => {
+                                // Admin triggering focus block for student
+                                fetch('http://localhost:3001/api/calendar/focus', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ studentId: student.studentId }) // endpoint needs to handle this or we just mock it for admin
+                                })
+                                    .then(() => alert(`Focus block scheduled for ${student.name}`))
+                                    .catch(err => console.error(err));
+                            }}
+                            className="p-2 rounded-lg hover:bg-white/5 text-indigo-400 hover:text-indigo-300 transition-colors shrink-0 border border-transparent hover:border-white/10"
+                            title="Assign Focus Block"
+                        >
+                            <Clock size={24} />
+                        </button>
+                        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors shrink-0">
+                            <X size={24} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 md:p-6 space-y-6 md:space-y-8">
