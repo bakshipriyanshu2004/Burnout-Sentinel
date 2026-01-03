@@ -87,6 +87,18 @@ The application will be available at `http://localhost:3000`.
 
 ---
 
+## 🚀 Deployment Guide (Vercel)
+
+If you are deploying to **Vercel** and see a `404: NOT_FOUND` error, it is likely because Vercel is looking for the app in the root folder, but the Next.js app is inside `client/`.
+
+### Fix: Set Root Directory
+1.  Go to your Vercel Project Settings.
+2.  Navigate to **General** > **Root Directory**.
+3.  Click **Edit** and select the `client` folder.
+4.  **Save** and **Redeploy**.
+
+---
+
 ## 📖 Usage Workflow
 
 ### Login
