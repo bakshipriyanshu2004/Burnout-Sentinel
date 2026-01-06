@@ -17,7 +17,6 @@ export function SathiChat() {
 
     // Only show Sathi on student pages
     const isStudentPage = pathname?.includes('/student');
-    if (!isStudentPage) return null;
 
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -81,6 +80,8 @@ export function SathiChat() {
             setLoading(false);
         }
     };
+
+    if (!isStudentPage) return null;
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">

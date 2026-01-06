@@ -164,16 +164,11 @@ export function StudentDetailModal({ student, onClose }: StudentDetailModalProps
                         {student.riskLevel === 'HIGH' && (
                             <button
                                 onClick={() => {
-                                    fetch('http://localhost:3001/api/calendar/meet', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ studentId: student.studentId })
-                                    })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            window.open(data.meetLink, '_blank');
-                                        })
-                                        .catch(err => console.error(err));
+                                    const title = encodeURIComponent(`Counseling Session - ${student.name}`);
+                                    const details = encodeURIComponent(`Student ${student.name} is flagged as ${student.riskLevel} RISK.\n\nREQUIRED: Click "Add Google Meet Video Conferencing" to generate a meeting link for this session.`);
+                                    const attendees = encodeURIComponent(student.email);
+                                    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&add=${attendees}`;
+                                    window.open(url, '_blank');
                                 }}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors shadow-lg shadow-red-500/20 animate-pulse"
                             >

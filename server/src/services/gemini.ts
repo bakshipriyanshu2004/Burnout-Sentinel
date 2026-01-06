@@ -1,9 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-let model: any = null;
+let aiClient: any = null;
 
-const getModel = () => {
-    if (model) return model;
+const getClient = () => {
+    if (aiClient) return aiClient;
 
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) {
@@ -11,15 +11,14 @@ const getModel = () => {
         return null;
     }
 
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    return model;
+    aiClient = new GoogleGenAI({ apiKey: API_KEY });
+    return aiClient;
 };
 
 export const generateResponse = async (prompt: string, context?: string): Promise<string> => {
-    const aiModel = getModel();
+    const ai = getClient();
 
-    if (!aiModel) return "I'm sorry, my connection to the AI service is not configured.";
+    if (!ai) return "I'm sorry, my connection to the AI service is not configured.";
 
     try {
         const fullPrompt = `
@@ -41,9 +40,12 @@ export const generateResponse = async (prompt: string, context?: string): Promis
         - IMPORTANT: If you suggest a Focus Block, append the string "<Action:FocusBlock>" to the end of your message.
         `;
 
-        const result = await aiModel.generateContent(fullPrompt);
-        const response = await result.response;
-        return response.text();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: fullPrompt,
+        });
+
+        return response.text;
     } catch (error) {
         console.error("Gemini API Error:", error);
         return "I'm having a little trouble thinking right now. Can we try again later?";

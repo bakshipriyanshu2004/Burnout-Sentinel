@@ -14,7 +14,7 @@ export function TopNav() {
     // Hide navigation on login page (root)
     if (pathname === '/') return null;
 
-    const isStudentDashboard = pathname === '/student-dashboard';
+    const isStudentDashboard = pathname === '/student-dashboard' || pathname === '/student';
 
     return (
         <header className="flex h-16 items-center justify-between border-b border-white/10 bg-[#0B0F19] px-4 md:px-6 relative z-50">

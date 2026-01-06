@@ -15,7 +15,7 @@ import {
     Legend,
     Filler,
 } from "chart.js";
-import { Clock, BookOpen, Activity, AlertCircle, LogOut, CheckCircle, XCircle } from "lucide-react";
+import { Clock, BookOpen, Activity, AlertCircle, LogOut, CheckCircle, XCircle, User } from "lucide-react";
 import { format } from "date-fns";
 
 
@@ -49,7 +49,7 @@ export default function StudentDashboard() {
     }, [student]);
 
     const attendanceData = useMemo(() => {
-        if (!student?.studentId) return Array(7).fill(0);
+        if (!student?.studentId) return Array(5).fill(0);
         // "Random attendance" but consistent for the student (seeded by ID)
         const seed = student.studentId.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
         const seededRandom = (s: number) => {
@@ -57,13 +57,18 @@ export default function StudentDashboard() {
             return x - Math.floor(x);
         };
 
-        return Array.from({ length: 7 }, (_, i) => seededRandom(seed + i) > 0.3 ? 1 : 0);
+        return Array.from({ length: 5 }, (_, i) => seededRandom(seed + i) > 0.3 ? 1 : 0);
     }, [student]);
 
     const metrics = useMemo(() => {
-        // Attendance %
-        const totalDays = student?.activityLogs?.length || 1;
-        const activeDays = student?.activityLogs?.filter((l: any) => l.loginCount > 0).length || 0;
+        // Attendance % (Exclude Weekends)
+        const weekdayLogs = student?.activityLogs?.filter((l: any) => {
+            const day = new Date(l.date).getDay();
+            return day !== 0 && day !== 6; // 0=Sun, 6=Sat
+        }) || [];
+
+        const totalDays = weekdayLogs.length || 1;
+        const activeDays = weekdayLogs.filter((l: any) => l.loginCount > 0).length || 0;
         const attPct = Math.round((activeDays / totalDays) * 100);
 
         // Assignments
@@ -187,7 +192,7 @@ export default function StudentDashboard() {
         ],
     };
 
-    const attendanceLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const attendanceLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
     const attendanceChartData = {
         labels: attendanceLabels,
         datasets: [
@@ -243,6 +248,13 @@ export default function StudentDashboard() {
                         </div>
                     </div>
 
+                    <button
+                        onClick={() => router.push('/student')}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors text-sm font-medium"
+                    >
+                        <User size={16} />
+                        Student Page
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium"

@@ -1,0 +1,27 @@
+🚀 Baal Mantra: Your AI-Powered Student Well-being Platform.
+
+Baal Mantra is an intelligent early intervention system designed to detect, prevent, and manage student burnout. By combining real-time engagement analytics with a supportive AI companion ("Sathi"), it helps institutions proactively support students before they fall behind.
+
+Key Features:
+🔹 Sathi AI Companion: A supportive, Gemini-powered chatbot for 24/7 emotional support and motivation.
+🔹 Smart Scheduling: One-click "Focus Block" scheduling directly to Google Calendar.
+🔹 Risk Analysis Dashboard: Real-time identification of "High Risk" students based on engagement patterns.
+🔹 Instant Intervention: Counselors can generate Google Meet links instantly for immediate support.
+🔹 Personalized Analytics: Detailed visualization of attendance, assignment completion, and engagement scores.
+
+Tech Stack:
+• Frontend: Next.js 14, React, Tailwind CSS, Lucide Icons, Chart.js
+• Backend: Node.js, Express.js
+• AI Model: Google Gemini Pro (Generative AI)
+• APIs: Google Calendar API, Google Meet API
+• Deployment: Vercel (Client)
+
+🔗 Project Links:
+• GitHub Repository: https://github.com/bakshipriyanshu2004/Burnout-Sentinel
+
+💡 Made by Team FnaTic
+Priyanshu Bakshi
+Pranajit Banerjee
+Atanu Sarkar
+
+#Hackathon #AI #EdTech #MentalHealth #NextJS #GeminiAI #StudentWellbeing #FullStack
