@@ -26,13 +26,6 @@
 
 ---
 
-## 👥 Team FnaTic
-*   **Priyanshu Bakshi**
-*   **Pranajit Banerjee**
-*   **Atanu Sarkar**
-
----
-
 ## 🛠️ Tech Stack
 
 *   **Frontend**: Next.js 14, React, Tailwind CSS, Lucide Icons, Chart.js
