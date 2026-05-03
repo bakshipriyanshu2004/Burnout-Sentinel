@@ -16,7 +16,7 @@ import {
     Legend,
     Filler,
 } from "chart.js";
-import { LogOut, Bell, Hand, AlertTriangle, User, Calendar, Mail, Sparkles, Trophy, Quote } from "lucide-react";
+import { LogOut, Bell, Hand, AlertTriangle, User, Calendar, Mail, Sparkles, Trophy, Quote, Download } from "lucide-react";
 import { SathiChat } from "@/components/SathiChat";
 
 ChartJS.register(
@@ -296,6 +296,27 @@ export default function StudentDashboard() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {/* Download Report Card */}
+                        <button
+                            onClick={async () => {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch('http://localhost:3001/api/report/student/me', {
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (!res.ok) { alert('Failed to generate report.'); return; }
+                                const blob = await res.blob();
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `ReportCard_${student.studentId}.pdf`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="px-4 py-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all text-sm font-medium flex items-center gap-2 border border-green-500/20"
+                        >
+                            <Download size={16} /> Report Card
+                        </button>
+
                         {/* Sathi Assistant Button */}
                         <button
                             onClick={() => setSathiOpen(true)}

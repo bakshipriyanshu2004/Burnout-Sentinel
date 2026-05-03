@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { LogOut, Users, CheckCircle, Hand, Mail, Send, AlertTriangle } from 'lucide-react';
+import { LogOut, Users, CheckCircle, Hand, Mail, Send, AlertTriangle, RefreshCw, FileText } from 'lucide-react';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -14,6 +14,21 @@ export default function AdminDashboard() {
     const [messageTarget, setMessageTarget] = useState('ALL');
     const [messageBody, setMessageBody] = useState('');
     const [sendingMsg, setSendingMsg] = useState(false);
+
+    const [reindexing, setReindexing] = useState(false);
+
+    const handleReindex = async () => {
+        setReindexing(true);
+        try {
+            const token = localStorage.getItem('token');
+            await fetch('http://localhost:3001/api/report/reindex', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            alert('Re-indexing started! Check server logs. It will complete in 1-2 minutes.');
+        } catch { alert('Failed to start re-indexing.'); }
+        finally { setReindexing(false); }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -112,9 +127,20 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleLogout} className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium flex items-center gap-2 border border-red-500/20">
-                        <LogOut size={16} /> Logout
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleReindex}
+                            disabled={reindexing}
+                            className="px-4 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all text-sm font-medium flex items-center gap-2 border border-purple-500/20 disabled:opacity-50"
+                            title="Re-index course documents for Sathi RAG chatbot"
+                        >
+                            <RefreshCw size={16} className={reindexing ? 'animate-spin' : ''} />
+                            {reindexing ? 'Re-indexing...' : 'Re-index Docs'}
+                        </button>
+                        <button onClick={handleLogout} className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium flex items-center gap-2 border border-red-500/20">
+                            <LogOut size={16} /> Logout
+                        </button>
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

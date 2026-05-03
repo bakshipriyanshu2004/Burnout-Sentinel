@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Lock, User, ShieldCheck, CalendarDays } from "lucide-react";
+import Image from "next/image";
+import { Lock, User, ShieldCheck, CalendarDays } from "lucide-react";
 import api from "@/lib/api";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -73,8 +74,8 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md bg-black/40 backdrop-blur-sm border border-white/10 p-8 rounded-2xl shadow-xl relative z-10 backdrop-blur-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 bg-amber-600 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-amber-600/20">
-            <GraduationCap size={28} />
+          <div className="h-14 w-14 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg shadow-black/40 mb-4 flex items-center justify-center">
+            <Image src="/logo.svg" alt="Baal Mantra" width={56} height={56} />
           </div>
           <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
           <p className="text-gray-400 text-sm mt-2">Sign in to access your account</p>

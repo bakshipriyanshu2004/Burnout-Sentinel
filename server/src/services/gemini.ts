@@ -103,3 +103,61 @@ ${userMessage}
         return "I'm having a little trouble thinking right now. Can we try again later?";
     }
 };
+
+// ─── RAG-grounded response with optional image (Gemini Vision) ───────────────
+export const generateRAGResponseWithImage = async (
+    userMessage: string,
+    imageBase64: string | undefined,
+    retrievedContext: string,
+    studentContext: string
+): Promise<string> => {
+    const ai = getClient();
+    if (!ai) return "I'm sorry, my connection to the AI service is not configured.";
+
+    const hasDocContext = retrievedContext && retrievedContext.trim().length > 0;
+
+    const systemPrompt = `
+You are Sathi, a knowledgeable and supportive academic assistant for students.
+
+${hasDocContext ? `=== COURSE DOCUMENT CONTEXT ===\nUse ONLY this for course-related questions. If not found here, say "I couldn't find that in your course materials."\n\n${retrievedContext}\n=== END ===` : 'NOTE: No course documents indexed yet.'}
+
+=== STUDENT PROFILE ===
+${studentContext}
+=== END ===
+
+${imageBase64 ? '=== IMAGE ATTACHED ===\nThe student has uploaded an image. Analyze it carefully and relate it to their coursework if possible.\n=== END ===' : ''}
+
+USER QUESTION: ${userMessage}
+
+GUIDELINES:
+- For subject questions: answer from document context only.
+- For images: describe, explain concepts shown, help with the problem.
+- Be warm, concise, student-friendly.
+- If suggesting a Focus Block, append "<Action:FocusBlock>" at the end.
+- Never hallucinate. If unsure, say so clearly.`.trim();
+
+    try {
+        let contents: any;
+
+        if (imageBase64) {
+            contents = {
+                parts: [
+                    { text: systemPrompt },
+                    { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }
+                ]
+            };
+        } else {
+            contents = systemPrompt;
+        }
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents,
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error("Gemini Vision/RAG Error:", error);
+        return "I'm having a little trouble analyzing that right now. Can we try again?";
+    }
+};

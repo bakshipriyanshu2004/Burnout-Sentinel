@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import studentRoutes from './routes/students';
 import chatRoutes from './routes/chat';
 import calendarRoutes from './routes/calendar';
+import reportRoutes from './routes/report';
 import { connectDB } from './data/db';
 import { seedDatabase } from './data/seed';
 import { loadVectorStore } from './services/ragService';
@@ -23,6 +24,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/report', reportRoutes);
 
 connectDB().then(async () => {
     // await seedDatabase(); // Disabled to persist database state

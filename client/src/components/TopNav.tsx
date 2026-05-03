@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Bell, Search, UserCircle, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Search, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -83,19 +83,6 @@ export function TopNav() {
                         />
                     </div>
                 )}
-
-                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                    <Bell size={20} />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#0B0F19]"></span>
-                </button>
-
-                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 p-[1px]">
-                    <div className="h-full w-full rounded-full bg-[#0B0F19] p-0.5">
-                        <div className="h-full w-full rounded-full bg-cyan-500/20 flex items-center justify-center">
-                            <UserCircle size={20} className="text-cyan-400" />
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* Mobile Menu Dropdown */}

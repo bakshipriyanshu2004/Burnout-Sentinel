@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getDB } from '../data/db';
 import { calculateRisk } from '../risk/engine';
-import { generateRAGResponse } from '../services/gemini';
+import { generateRAGResponseWithImage } from '../services/gemini';
 import { retrieveContext } from '../services/ragService';
 import { verifyFirebaseToken, isFirebaseEnabled } from '../firebaseAuth';
 
@@ -41,7 +41,7 @@ const parseStudentJSON = (student: any) => ({
 
 router.post('/message', authenticateToken, async (req: Request, res: Response): Promise<any> => {
     try {
-        const { message } = req.body;
+        const { message, imageBase64 } = req.body;
         const user = (req as any).user;
         const db = getDB();
 
@@ -64,11 +64,11 @@ Engagement Score: ${riskProfile.engagementScore}/100
 Risk Factors: ${riskProfile.redFlags.join(", ") || "None"}
         `.trim();
 
-        // RAG: retrieve relevant document chunks for the student's question
-        const retrievedContext = await retrieveContext(message, 4);
+        // RAG: retrieve relevant document chunks
+        const retrievedContext = await retrieveContext(message || 'analyze this image', 4);
 
-        // Generate grounded response
-        const reply = await generateRAGResponse(message, retrievedContext, studentContext);
+        // Generate grounded response (with optional image)
+        const reply = await generateRAGResponseWithImage(message || 'Please analyze this image.', imageBase64, retrievedContext, studentContext);
 
         res.json({ reply, hasDocContext: retrievedContext.length > 0 });
 
