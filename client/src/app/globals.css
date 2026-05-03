@@ -7,8 +7,11 @@
 
 body {
   color: var(--foreground);
-  background: linear-gradient(135deg, #020617 0%, #0F172A 100%);
-  /* Very dark slate */
+  background-image: url('/bg.jpg'), linear-gradient(180deg, #050811 0%, #111929 45%, #b08d6a 50%, #1b273b 55%, #02040a 100%);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   min-height: 100vh;
 }
 

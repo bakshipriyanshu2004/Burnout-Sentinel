@@ -20,6 +20,8 @@ export interface Student {
     studentId: string;
     name: string;
     email: string;
+    dob: string;
+    department?: string;
     activityLogs: ActivityLog[];
     assignments: Assignment[];
     grades: number[]; // Historical grades
@@ -27,5 +29,6 @@ export interface Student {
     riskLevel: RiskLevel;
     gradeTrend: GradeTrend;
     engagementScore: number; // 0-100
+    attendancePercentage: number; // 0-100
     redFlags: string[];
 }

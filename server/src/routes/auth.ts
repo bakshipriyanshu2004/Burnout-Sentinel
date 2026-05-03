@@ -1,43 +1,66 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { store } from '../data/store';
+import { getDB } from '../data/db';
 
 const router = Router();
 const JWT_SECRET = 'hackathon-secret-key-123'; // Hardcoded for MVP
 
 // POST /api/auth/login
-router.post('/login', (req: Request, res: Response): any => {
-    const { studentId, email } = req.body;
+router.post('/login', async (req: Request, res: Response): Promise<any> => {
+    try {
+        let { rollNumber, dob } = req.body; 
 
-    // Simple auth: Check if student exists matching ID and Email
-    const student = store.getStudentById(studentId);
+        console.log(`[Login Attempt] Roll Number: "${rollNumber}", DOB: "${dob}"`);
 
-    if (!student || student.email !== email) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
+        rollNumber = rollNumber?.trim();
+        dob = dob?.trim();
 
-    // Generate Token
-    const token = jwt.sign(
-        { studentId: student.studentId, name: student.name, role: 'student' },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-    );
+        const db = getDB();
+        const student = await db.get('SELECT * FROM Students WHERE studentId = ? AND dob = ?', [rollNumber, dob]);
 
-    return res.json({ token, user: { name: student.name, studentId: student.studentId } });
-});
+        if (student) {
+            console.log(`[Login Info] Found match: ${student.studentId}`);
+        } else {
+            console.log(`[Login Info] No student found with Roll Number: "${rollNumber}" and DOB: "${dob}"`);
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
 
-// Admin Login (Mock - hardcoded for demo)
-router.post('/admin/login', (req: Request, res: Response) => {
-    const { username, password } = req.body;
-    if (username === 'admin' && password === 'admin') {
+        // Generate Token
         const token = jwt.sign(
-            { role: 'admin' },
+            { studentId: student.studentId, name: student.name, role: 'student', department: student.department },
             JWT_SECRET,
             { expiresIn: '1h' }
         );
-        return res.json({ token });
+
+        console.log('[Login Success]');
+        return res.json({ token, user: { name: student.name, studentId: student.studentId, department: student.department } });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
-    return res.status(401).json({ error: 'Invalid admin credentials' });
+});
+
+// Admin Login (Guru)
+router.post('/admin/login', async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { username, password } = req.body;
+        
+        const db = getDB();
+        const teacher = await db.get('SELECT * FROM Teachers WHERE teacherId = ? AND passwordHash = ?', [username, password]);
+        
+        if (teacher) {
+            const token = jwt.sign(
+                { role: 'admin', teacherId: teacher.teacherId, department: teacher.department },
+                JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+            return res.json({ token, user: { teacherId: teacher.teacherId, department: teacher.department } });
+        }
+        return res.status(401).json({ error: 'Invalid Guru credentials' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 export default router;

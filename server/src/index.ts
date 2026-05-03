@@ -7,6 +7,8 @@ import authRoutes from './routes/auth';
 import studentRoutes from './routes/students';
 import chatRoutes from './routes/chat';
 import calendarRoutes from './routes/calendar';
+import { connectDB } from './data/db';
+import { seedDatabase } from './data/seed';
 
 const app = express();
 const PORT = 3001;
@@ -21,7 +23,9 @@ app.use('/api/student', studentRoutes); // For student portal (me) - reusing fil
 app.use('/api/chat', chatRoutes);
 app.use('/api/calendar', calendarRoutes);
 
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+connectDB().then(async () => {
+    // await seedDatabase(); // Disabled to persist database state
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
 });

@@ -1,25 +1,59 @@
-🚀 Baal Mantra: Your AI-Powered Student Well-being Platform.
+ Baal Mantra: Your AI-Powered Student Well-being Platform.
 
 Baal Mantra is an intelligent early intervention system designed to detect, prevent, and manage student burnout. By combining real-time engagement analytics with a supportive AI companion ("Sathi"), it helps institutions proactively support students before they fall behind.
 
 Key Features:
-🔹 Sathi AI Companion: A supportive, Gemini-powered chatbot for 24/7 emotional support and motivation.
-🔹 Smart Scheduling: One-click "Focus Block" scheduling directly to Google Calendar.
-🔹 Risk Analysis Dashboard: Real-time identification of "High Risk" students based on engagement patterns.
-🔹 Instant Intervention: Counselors can generate Google Meet links instantly for immediate support.
-🔹 Personalized Analytics: Detailed visualization of attendance, assignment completion, and engagement scores.
+ Sathi AI Companion: A supportive, Gemini-powered chatbot for 24/7 emotional support and motivation.
+ Smart Scheduling: One-click "Focus Block" scheduling directly to Google Calendar.
+ Risk Analysis Dashboard: Real-time identification of "High Risk" students based on engagement patterns.
+ Instant Intervention: Counselors can generate Google Meet links instantly for immediate support.
+ Personalized Analytics: Detailed visualization of attendance, assignment completion, and engagement scores.
 
-Tech Stack:
-• Frontend: Next.js 14, React, Tailwind CSS, Lucide Icons, Chart.js
-• Backend: Node.js, Express.js
-• AI Model: Google Gemini Pro (Generative AI)
-• APIs: Google Calendar API, Google Meet API
-• Deployment: Vercel (Client)
 
-🔗 Project Links:
+Tech Stack & Architecture:
+
+• Frontend Framework: Next.js 16 & React 19
+  - Where: Powers the entire client-side interface (`client/`), handling routing, layouts, and interactive components.
+  - Why: Leverages the latest React 19 features and Next.js 16 optimizations for high performance and SEO. It provides a robust structure for building complex, interactive dashboards and ensures a seamless, responsive user experience.
+
+• Styling: Tailwind CSS v4 & Lucide Icons
+  - Where: Used for all UI components, layouts, and iconography.
+  - Why: Tailwind (v4) offers a modern, utility-first approach for rapid, consistent styling with low bundle size. Lucide icons provide a clean, professional visual language critical for a mental health platform.
+
+• Backend Runtime: Node.js & Express.js (v5)
+  - Where: Serves as the API layer (`server/`), managing client requests, authentication, and orchestrating AI and data services.
+  - Why: Event-driven non-blocking I/O is ideal for real-time applications. Express v5 allows for modern, robust routing and middleware handling, streamlining the development of RESTful endpoints.
+
+• AI & Intelligence: Google Gemini Pro
+  - Where: Drives the "Sathi" chatbot and analyzes student sentiment/risk patterns.
+  - Why: Selected for its superior natural language reasoning and context handling. It enables "Sathi" to offer empathetic, context-aware support and actionable advice rather than generic responses.
+
+• Data & Visualizations: Chart.js & In-Memory Store
+  - Where: Admin/Student dashboards and backend data persistence.
+  - Why: Chart.js renders complex engagement data into easy-to-understand visual trends. The In-Memory store (MVP) allows for ultra-fast prototyping and demonstration without the friction of database configuration, while remaining structured for easy migration to MongoDB/SQL.
+
+• Integrations: Google Calendar & Meet
+  - Where: Embedded in the scheduling and intervention modules.
+  - Why: Directly connects digital insights to real-world actions, allowing students to block out focus time and counselors to initiate meetings instantly.
+
+Google Technologies Powering the Solution:
+
+1. Google Gemini 1.5 Pro (The Cognitive Core)
+   - Usage: Powers "Sathi", the empathetic AI companion.
+   - Why It Matters: Unlike standard rule-based chatbots, Gemini's advanced reasoning capabilities allow Sathi to understand emotional nuance, detect subtle signs of distress in student inputs, and offer personalized, context-aware motivation. It transforms the system from a passive tracker to an active, intelligent emotional support layer.
+
+2. Google Calendar API (Action-Oriented Wellness)
+   - Usage: Enables the "One-Click Focus Block" feature.
+   - Why It Matters: Students facing burnout often struggle with executive dysfunction and scheduling. By deeply integrating with their personal Google Calendar, we reduce the cognitive load of planning. Sathi doesn't just suggest studying; it carves out protected time for it, turning advice into tangible action.
+
+3. Google Meet API (Zero-Friction Intervention)
+   - Usage: Instant counseling session generation.
+   - Why It Matters: In mental health crises, every second of friction counts. We utilize the Google Meet API to generate secure, immediate video conferencing links the moment a counselor identifies a high-risk student. This eliminates the back-and-forth of scheduling, enabling immediate human connection when it's needed most.
+
+ Project Links:
 • GitHub Repository: https://github.com/bakshipriyanshu2004/Burnout-Sentinel
 
-💡 Made by Team FnaTic
+ Made by Team FnaTic
 Priyanshu Bakshi
 Pranajit Banerjee
 Atanu Sarkar

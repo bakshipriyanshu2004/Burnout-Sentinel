@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Lock, User, ShieldCheck, Mail } from "lucide-react";
+import { GraduationCap, Lock, User, ShieldCheck, CalendarDays } from "lucide-react";
 import api from "@/lib/api";
+import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [role, setRole] = useState<'student' | 'admin'>('student');
 
   // Student Form State
-  const [studentId, setStudentId] = useState("");
-  const [email, setEmail] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [dob, setDob] = useState("");
 
   // Admin Form State
   const [username, setUsername] = useState("");
@@ -26,33 +28,52 @@ export default function LoginPage() {
     setError("");
 
     try {
-      if (role === 'student') {
-        const res = await api.post('/auth/login', { studentId, email });
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user)); // Optional: store basics
-        router.push("/student-dashboard");
+      if (isFirebaseConfigured && auth) {
+        // Firebase Login
+        const emailToLogin = role === 'student' ? `${rollNumber.trim()}@bcrec.edu` : `${username.trim()}@bcrec.edu`;
+        const passToLogin = role === 'student' ? dob.trim() : password.trim();
+        
+        const userCredential = await signInWithEmailAndPassword(auth, emailToLogin, passToLogin);
+        const token = await userCredential.user.getIdToken();
+        
+        localStorage.setItem('token', token);
+        
+        if (role === 'student') {
+            router.push("/student-dashboard");
+        } else {
+            router.push("/admin-dashboard");
+        }
+
       } else {
-        const res = await api.post('/auth/admin/login', { username, password });
-        localStorage.setItem('token', res.data.token);
-        router.push("/admin-dashboard");
+        // Fallback to local JWT Login
+        if (role === 'student') {
+          const res = await api.post('/auth/login', { rollNumber, dob });
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          router.push("/student-dashboard");
+        } else {
+          const res = await api.post('/auth/admin/login', { username, password });
+          localStorage.setItem('token', res.data.token);
+          router.push("/admin-dashboard");
+        }
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || "Login failed. Please check your credentials.");
+      setError(err.message || err.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#060910] p-4 relative overflow-hidden">
+    <main className="min-h-screen flex items-center justify-center bg-transparent p-4 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-500/10 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-yellow-500/10 blur-[120px] rounded-full" />
 
-      <div className="w-full max-w-md bg-[#0B0F19] border border-white/10 p-8 rounded-2xl shadow-xl relative z-10 backdrop-blur-xl">
+      <div className="w-full max-w-md bg-black/40 backdrop-blur-sm border border-white/10 p-8 rounded-2xl shadow-xl relative z-10 backdrop-blur-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-indigo-600/20">
+          <div className="h-12 w-12 bg-amber-600 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-amber-600/20">
             <GraduationCap size={28} />
           </div>
           <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
@@ -60,22 +81,22 @@ export default function LoginPage() {
         </div>
 
         {/* Role Toggle */}
-        <div className="flex bg-[#151926] p-1 rounded-lg border border-white/5 mb-6">
+        <div className="flex bg-black/50 backdrop-blur-sm p-1 rounded-lg border border-white/5 mb-6">
           <button
             onClick={() => setRole('student')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'student' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'student' ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
               }`}
           >
             <User size={16} />
-            Student
+            Sishya
           </button>
           <button
             onClick={() => setRole('admin')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'admin' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${role === 'admin' ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
               }`}
           >
             <ShieldCheck size={16} />
-            Admin
+            Guru
           </button>
         </div>
 
@@ -89,29 +110,28 @@ export default function LoginPage() {
           {role === 'student' ? (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Student ID</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Roll Number</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    placeholder="e.g. STU12345"
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    placeholder="e.g. R2024001"
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
+                    className="w-full bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                     required={role === 'student'}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Date of Birth</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
-                    type="email"
-                    placeholder="student@university.edu"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="w-full bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                     required={role === 'student'}
                   />
                 </div>
@@ -120,21 +140,21 @@ export default function LoginPage() {
           ) : (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Username</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Guru ID (e.g. T1)</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    placeholder="Admin Username"
+                    placeholder="Guru ID"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                     required={role === 'admin'}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Unique Password ID</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
@@ -142,7 +162,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#151926] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
                     required={role === 'admin'}
                   />
                 </div>
@@ -153,7 +173,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -161,7 +181,7 @@ export default function LoginPage() {
                 Signing in...
               </>
             ) : (
-              role === 'student' ? 'Student Login' : 'Admin Login'
+              role === 'student' ? 'Sishya Login' : 'Guru Login'
             )}
           </button>
         </form>
@@ -169,11 +189,11 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           {role === 'admin' ? (
             <p className="text-xs text-gray-500">
-              Use <span className="text-white font-mono">admin / admin</span> for demo.
+              Use your first name as Guru ID (e.g. Swadhin) and the standard password.
             </p>
           ) : (
             <p className="text-xs text-gray-500">
-              Forgot credentials? Contact your administrator.
+              Forgot credentials? Contact your Guru.
             </p>
           )}
         </div>

@@ -1,16 +1,28 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { googleService } from '../services/google';
-import { store } from '../data/store';
+import { getDB } from '../data/db';
 
 const router = Router();
 const JWT_SECRET = 'hackathon-secret-key-123';
 
-const authenticateToken = (req: Request, res: Response, next: NextFunction): any => {
+import { verifyFirebaseToken, isFirebaseEnabled } from '../firebaseAuth';
+
+const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) return res.sendStatus(401);
+
+    if (isFirebaseEnabled && token.length > 500) {
+        try {
+            const decoded = await verifyFirebaseToken(token);
+            (req as any).user = { studentId: decoded.uid };
+            return next();
+        } catch (error) {
+            return res.sendStatus(403);
+        }
+    }
 
     jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
         if (err) return res.sendStatus(403);
@@ -19,14 +31,11 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction): any
     });
 };
 
-// POST /api/calendar/meet
-// Triggered by Admin or System for "Instant Counseling"
 router.post('/meet', async (req: Request, res: Response) => {
     try {
         const { studentId } = req.body;
-        // In real app: verify admin permissions
-
-        const student = store.getStudentById(studentId);
+        const db = getDB();
+        const student = await db.get('SELECT * FROM Students WHERE studentId = ?', [studentId]);
         const name = student ? student.name : "Student";
 
         const meetLink = await googleService.createMeetLink(name);
@@ -42,14 +51,12 @@ router.post('/meet', async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/calendar/focus
-// Triggered by Student (via Sathi Chat) for "Focus Block"
 router.post('/focus', authenticateToken, async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const student = store.getStudentById(user.studentId);
+        const db = getDB();
+        const student = await db.get('SELECT * FROM Students WHERE studentId = ?', [user.studentId]);
 
-        // Default to starting in 10 mins, for 45 mins
         const startTime = new Date();
         startTime.setMinutes(startTime.getMinutes() + 10);
 

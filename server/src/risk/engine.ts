@@ -88,6 +88,23 @@ export const calculateRisk = (student: Student): { riskScore: number; riskLevel:
     if (totalScore >= 70) riskLevel = 'HIGH';
     else if (totalScore >= 40) riskLevel = 'MEDIUM';
 
+    // Manual Override for Demo (Specific Student Only)
+    // This ensures demonstration of High Risk features without affecting the algorithm for others.
+    if (student.email === 'priyanshubakshi2506@gmail.com') {
+        riskLevel = 'HIGH';
+        // Force critical score if not already high
+        if (totalScore < 92) {
+            const forcedScore = 95;
+            return {
+                riskScore: forcedScore,
+                riskLevel: 'HIGH',
+                gradeTrend: 'Declining',
+                engagementScore: 49, // Forced 49% as requested
+                redFlags: [...redFlags, 'Critical Engagement Drop', 'Urgent Intervention Needed'].slice(0, 3)
+            };
+        }
+    }
+
     return {
         riskScore: totalScore,
         riskLevel,

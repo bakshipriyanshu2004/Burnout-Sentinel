@@ -15,8 +15,8 @@ export function SathiChat() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
 
-    // Only show Sathi on student pages
-    const isStudentPage = pathname?.includes('/student');
+    // Only show Sathi on student pages (exclude admin /students list)
+    const isStudentPage = (pathname?.startsWith('/student') && !pathname?.startsWith('/students')) || pathname?.startsWith('/student-dashboard');
 
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -169,7 +169,7 @@ export function SathiChat() {
                                     }}
                                     className="ml-10 text-xs bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
                                 >
-                                    <span>📅 Schedule Focus Block</span>
+                                    <span> Schedule Focus Block</span>
                                 </button>
                             )}
                         </div>
@@ -216,13 +216,13 @@ export function SathiChat() {
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs border border-indigo-500/20 transition-colors whitespace-nowrap"
                     >
-                        📅 Focus Block
+                         Focus Block
                     </button>
                     <button
                         onClick={() => setInput("Give me a motivation boost!")}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-xs border border-purple-500/20 transition-colors whitespace-nowrap"
                     >
-                        💪 Motivation
+                         Motivation
                     </button>
                 </div>
 

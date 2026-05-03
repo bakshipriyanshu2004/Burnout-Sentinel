@@ -1,32 +1,33 @@
-# 🛡️ Burnout Sentinel - AI-Powered Student Well-being Platform
+# ️ Burnout Sentinel - AI-Powered Student Well-being Platform
 
 **Burnout Sentinel** is an intelligent early intervention system designed to detect, prevent, and manage student burnout. By combining real-time engagement analytics with a supportive AI companion ("Sathi"), it helps institutions proactively support students before they fall behind.
 
 ![Burnout Sentinel Banner](https://via.placeholder.com/1200x400.png?text=Burnout+Sentinel+Dashboard)
 
-## 🚀 Key Features
+##  Key Features
 
-### 🎓 For Students
-*   **"Sathi" AI Companion**: A supportive, Gemini-powered chatbot available 24/7 on the Student Portal.
-    *   **Emotional Support**: Chats like a friend to reduce stress.
+###  For Students.
     *   **Smart Scheduling**: One-click "Focus Block" scheduling to Google Calendar.
-    *   **Motivation**: Instant motivational boosts via Quick Actions.
-*   **Personalized Dashboard**: View engagement scores, attendance trends, and assignment status.
-*   **Assignment Tracking**: Easy view of pending assignments and upload capabilities.
 
-### 🏫 For Admins / Counselors
+*   **Comprehensive Academic Dashboard**: 
+    *   View exact Continuous Assessment (CA1 - CA4) marks and a trend graph for 6 specific subjects.
+    *   Real-time attendance tracking (out of 120 total classes per semester).
+    *   **Critical Alerts**: Prominent warnings if attendance drops below the 60% requirement.
+*   **Raise Hand Feature**: Instantly request help or a 1-on-1 Meet session directly with the subject teacher.
+*   **Notifications Inbox**: Receive broadcast announcements and direct messages from teachers.
+
+###  For Subject Teachers / Admins
+*   **Subject-Isolated Dashboard**: Teachers only see data relevant to their specific assigned subject.
+*   **Real-time Database Editing**: Inline data table to directly update CA marks and attendance. Risk scores instantly recalculate.
+*   **Raised Hands Queue**: Instantly view students who are requesting help and launch Google Meet directly from the queue.
+*   **Messaging & Broadcast**: Send instant notifications to the entire class or select students.
 *   **Risk Analysis Dashboard**: Real-time identification of "High Risk" students based on:
-    *   Falling grades
-    *   Low engagement (login frequency, video watch time)
-    *   Missed deadlines
-*   **Instant Intervention**: 
-    *   **Instant Counseling**: Generate a Google Meet link instantly for high-risk students.
-    *   **Assign Focus**: Manually schedule focus blocks for students who are struggling.
-*   **Deep Analytics**: Detailed charts and insights for every student.
+    *   Falling grades and academic deficits
+    *   Low engagement and critically low attendance (< 60%)
 
 ---
 
-## 🛠️ Tech Stack
+## ️ Tech Stack
 
 *   **Frontend**: Next.js 14, React, Tailwind CSS, Lucide Icons, Chart.js
 *   **Backend**: Node.js, Express.js
@@ -36,7 +37,7 @@
 
 ---
 
-## ⚙️ Installation & Setup
+## ️ Installation & Setup
 
 ### Prerequisites
 *   Node.js (v18+)
@@ -87,7 +88,7 @@ The application will be available at `http://localhost:3000`.
 
 ---
 
-## 🚀 Deployment Guide (Vercel)
+##  Deployment Guide (Vercel)
 
 If you are deploying to **Vercel** and see a `404: NOT_FOUND` error, it is likely because Vercel is looking for the app in the root folder, but the Next.js app is inside `client/`.
 
@@ -99,30 +100,30 @@ If you are deploying to **Vercel** and see a `404: NOT_FOUND` error, it is likel
 
 ---
 
-## 📖 Usage Workflow
+##  Usage Workflow
 
 ### Login
 *   **Admin Portal**: Access via `/login` (Use credentials provided in `student_credentials.txt` or default admin login).
 *   **Student Portal**: Access via `/login`.
-    *   **Demo Student**: `bakshi@gmail.com` / `pass123` (ID: STD2506)
+    *   **Demo Student**: `priyanshubakshi2506@gmail.com` / `pass123` (ID: STD2506)
 
-### Scenario 1: The Stressed Student
-1.  **Login** as **Priyanshu Bakshi**.
+### Scenario 1: The Struggling Student
+1.  **Login** as any student from `student_credentials.txt` (e.g., Roll: 12031523001).
 2.  Navigate to the **Student Dashboard**.
-3.  Open **Sathi Chat** (bottom right).
-4.  Click **"📅 Focus Block"** or type "I'm overwhelmed".
-5.  Sathi schedules a dedicated study session on your mock Google Calendar.
+3.  Switch between subjects. Notice the **Critical Attendance Warning** if attendance is below 60%.
+4.  Click **"Raise Hand / Meet"** to request help from the respective subject teacher.
 
-### Scenario 2: The Proactive Counselor
-1.  **Login** as **Admin**.
-2.  View the **Risk Dashboard**.
-3.  Identify students marked with **HIGH RISK** red badges.
-4.  Click "View Details" on a student.
-5.  Click **"Instant Counseling"** to open a Google Meet session immediately.
+### Scenario 2: The Proactive Teacher
+1.  **Login** as a subject teacher from `student_credentials.txt` (e.g., Guru ID: Swadhin, Subject: Games & App Design).
+2.  View the **Risk Dashboard** for your subject.
+3.  Acknowledge the **Raised Hands Queue** and start a Google Meet with the struggling student.
+4.  Update a student's **CA marks** or **Classes Attended**. Notice how the Danger Score dynamically shifts.
+5.  Use the **Broadcast / Message** tool to send an encouraging notification to the class.
+
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 ├── client/                 # Next.js Frontend
@@ -138,8 +139,8 @@ If you are deploying to **Vercel** and see a `404: NOT_FOUND` error, it is likel
 └── README.md
 ```
 
-## 🤝 Contributing
+##  Contributing
 Contributions are welcome! Please fork the repository and submit a Pull Request.
 
-## 📄 License
+##  License
 MIT License.
