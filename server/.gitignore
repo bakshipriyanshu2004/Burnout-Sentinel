@@ -5,3 +5,5 @@ dist
 *.log
 database.sqlite
 serviceAccountKey.json
+src/data/documents/
+src/data/vectorstore/
