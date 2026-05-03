@@ -1,96 +1,89 @@
 import fs from 'fs';
 import path from 'path';
 
-// Try to import pdf-parse, fall back gracefully if unavailable
-let pdfParse: any = null;
-try {
-    pdfParse = require('pdf-parse');
-} catch {
-    console.warn('[RAG] pdf-parse not available. PDF files will be skipped.');
-}
+// pdf-parse exports PDFParse as a named class
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { PDFParse } = require('pdf-parse');
 
 const DOCS_DIR = path.join(__dirname, '../data/documents');
-const STORE_PATH = path.join(__dirname, '../data/vectorstore/embeddings.json');
+const STORE_PATH = path.join(__dirname, '../data/vectorstore/chunks.json');
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Chunk {
-    text: string;
+    id: string;
     source: string;
-    embedding: number[];
+    text: string;
+    // Pre-computed term frequencies for fast retrieval
+    terms: Record<string, number>;
 }
 
-let vectorStore: Chunk[] = [];
+let store: Chunk[] = [];
 let storeLoaded = false;
 
-// ──────────────────────────────────────────────
-// Embedding via Gemini text-embedding-004
-// ──────────────────────────────────────────────
-export async function embedText(text: string): Promise<number[]> {
-    const API_KEY = process.env.GEMINI_API_KEY;
-    if (!API_KEY) throw new Error('GEMINI_API_KEY not set');
+// ─── Text Tokenizer ───────────────────────────────────────────────────────────
+function tokenize(text: string): string[] {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2);
+}
 
-    const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${API_KEY}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'models/text-embedding-004',
-                content: { parts: [{ text }] }
-            })
-        }
-    );
+function computeTermFreqs(tokens: string[]): Record<string, number> {
+    const freq: Record<string, number> = {};
+    for (const t of tokens) freq[t] = (freq[t] ?? 0) + 1;
+    return freq;
+}
 
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Embedding API error: ${err}`);
+// ─── BM25-style keyword scoring ───────────────────────────────────────────────
+function scoreChunk(chunk: Chunk, queryTerms: string[]): number {
+    let score = 0;
+    const k1 = 1.5, b = 0.75;
+    const avgLen = 300; // approximate average chunk length in tokens
+    const chunkLen = Object.values(chunk.terms).reduce((a, b) => a + b, 0);
+
+    for (const term of queryTerms) {
+        const tf = chunk.terms[term] ?? 0;
+        if (tf === 0) continue;
+        const norm = tf * (k1 + 1) / (tf + k1 * (1 - b + b * chunkLen / avgLen));
+        score += norm;
     }
-
-    const data = await response.json();
-    return data.embedding.values as number[];
+    return score;
 }
 
-// ──────────────────────────────────────────────
-// Cosine similarity
-// ──────────────────────────────────────────────
-function cosineSimilarity(a: number[], b: number[]): number {
-    const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
-    const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-    const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-    return dot / (magA * magB);
-}
-
-// ──────────────────────────────────────────────
-// Text chunking (500 chars, 100 char overlap)
-// ──────────────────────────────────────────────
-function chunkText(text: string, chunkSize = 500, overlap = 100): string[] {
-    const chunks: string[] = [];
-    let start = 0;
-    while (start < text.length) {
-        const end = Math.min(start + chunkSize, text.length);
-        chunks.push(text.slice(start, end).trim());
-        start += chunkSize - overlap;
+// ─── Load / Save Store ────────────────────────────────────────────────────────
+export function loadVectorStore(): void {
+    if (!fs.existsSync(STORE_PATH)) {
+        console.log('[RAG] No chunk store on disk. Run buildVectorStore() after adding documents.');
+        return;
     }
-    return chunks.filter(c => c.length > 50); // skip tiny chunks
+    try {
+        store = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
+        storeLoaded = true;
+        console.log(`[RAG] Loaded ${store.length} chunks from disk.`);
+    } catch (e) {
+        console.error('[RAG] Failed to load chunk store:', e);
+    }
 }
 
-// ──────────────────────────────────────────────
-// Load and embed all documents
-// ──────────────────────────────────────────────
+function saveStore(): void {
+    const dir = path.dirname(STORE_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2));
+}
+
+// ─── Build Vector Store (extract + chunk + index) ────────────────────────────
 export async function buildVectorStore(): Promise<void> {
-    console.log('[RAG] Building vector store from documents...');
+    console.log('[RAG] Building chunk store from documents...');
 
     if (!fs.existsSync(DOCS_DIR)) {
-        console.warn('[RAG] No documents directory found at:', DOCS_DIR);
+        fs.mkdirSync(DOCS_DIR, { recursive: true });
+        console.log('[RAG] Created documents directory. Add PDF/TXT files and re-index.');
         return;
     }
 
     const files = fs.readdirSync(DOCS_DIR);
-    if (files.length === 0) {
-        console.warn('[RAG] No documents found in documents directory. Place .txt or .pdf files there.');
-        return;
-    }
-
-    const allChunks: Omit<Chunk, 'embedding'>[] = [];
+    const chunks: Chunk[] = [];
 
     for (const file of files) {
         const filePath = path.join(DOCS_DIR, file);
@@ -99,95 +92,67 @@ export async function buildVectorStore(): Promise<void> {
         try {
             if (file.endsWith('.txt') || file.endsWith('.md')) {
                 text = fs.readFileSync(filePath, 'utf-8');
-            } else if (file.endsWith('.pdf') && pdfParse) {
+            } else if (file.endsWith('.pdf')) {
                 const buffer = fs.readFileSync(filePath);
-                const parsed = await pdfParse(buffer);
+                const parser = new PDFParse({ data: buffer });
+                const parsed = await parser.getText();
                 text = parsed.text;
             } else {
-                console.log(`[RAG] Skipping unsupported file: ${file}`);
                 continue;
             }
-
-            const chunks = chunkText(text);
-            chunks.forEach(chunk => allChunks.push({ text: chunk, source: file }));
-            console.log(`[RAG] Loaded ${chunks.length} chunks from ${file}`);
+            console.log(`[RAG] Processed: ${file} (${text.length} chars)`);
         } catch (err) {
             console.error(`[RAG] Error reading ${file}:`, err);
+            continue;
+        }
+
+        // Chunk text into ~500-word blocks with 50-word overlap
+        const words = text.split(/\s+/);
+        const CHUNK_SIZE = 500;
+        const OVERLAP = 50;
+
+        for (let i = 0; i < words.length; i += CHUNK_SIZE - OVERLAP) {
+            const chunkWords = words.slice(i, i + CHUNK_SIZE);
+            const chunkText = chunkWords.join(' ').trim();
+            if (chunkText.length < 80) continue; // skip tiny chunks
+
+            const tokens = tokenize(chunkText);
+            chunks.push({
+                id: `${file}__${i}`,
+                source: file,
+                text: chunkText,
+                terms: computeTermFreqs(tokens),
+            });
         }
     }
 
-    if (allChunks.length === 0) {
-        console.warn('[RAG] No chunks extracted from documents.');
+    if (chunks.length === 0) {
+        console.log('[RAG] No chunks extracted from documents.');
         return;
     }
 
-    // Embed all chunks (batch with small delay to avoid rate limiting)
-    const embedded: Chunk[] = [];
-    for (let i = 0; i < allChunks.length; i++) {
-        try {
-            const embedding = await embedText(allChunks[i].text);
-            embedded.push({ ...allChunks[i], embedding });
-            if (i % 10 === 0) console.log(`[RAG] Embedded ${i + 1}/${allChunks.length} chunks...`);
-            // Small delay to respect rate limits
-            await new Promise(r => setTimeout(r, 100));
-        } catch (err) {
-            console.error(`[RAG] Failed to embed chunk ${i}:`, err);
-        }
-    }
-
-    // Save to disk
-    const storeDir = path.dirname(STORE_PATH);
-    if (!fs.existsSync(storeDir)) fs.mkdirSync(storeDir, { recursive: true });
-    fs.writeFileSync(STORE_PATH, JSON.stringify(embedded, null, 2));
-
-    vectorStore = embedded;
+    store = chunks;
     storeLoaded = true;
-    console.log(`[RAG] Vector store built with ${embedded.length} chunks. Saved to disk.`);
+    saveStore();
+    console.log(`[RAG] ✅ Indexed ${chunks.length} chunks from ${files.length} file(s).`);
 }
 
-// ──────────────────────────────────────────────
-// Load existing vector store from disk
-// ──────────────────────────────────────────────
-export function loadVectorStore(): void {
-    if (storeLoaded) return;
-    if (fs.existsSync(STORE_PATH)) {
-        try {
-            vectorStore = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
-            storeLoaded = true;
-            console.log(`[RAG] Loaded ${vectorStore.length} chunks from disk.`);
-        } catch (err) {
-            console.error('[RAG] Failed to load vector store from disk:', err);
-        }
-    } else {
-        console.warn('[RAG] No vector store on disk. Run buildVectorStore() after adding documents.');
-    }
-}
-
-// ──────────────────────────────────────────────
-// Retrieve top-K relevant chunks for a query
-// ──────────────────────────────────────────────
+// ─── Retrieve Relevant Context ────────────────────────────────────────────────
 export async function retrieveContext(query: string, topK = 4): Promise<string> {
-    loadVectorStore();
+    if (!storeLoaded || store.length === 0) return '';
 
-    if (vectorStore.length === 0) {
-        return ''; // No documents indexed yet
-    }
+    const queryTerms = tokenize(query);
+    if (queryTerms.length === 0) return '';
 
-    try {
-        const queryEmbedding = await embedText(query);
-        const scored = vectorStore.map(chunk => ({
-            ...chunk,
-            score: cosineSimilarity(queryEmbedding, chunk.embedding)
-        }));
+    const scored = store
+        .map(chunk => ({ chunk, score: scoreChunk(chunk, queryTerms) }))
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, topK);
 
-        scored.sort((a, b) => b.score - a.score);
-        const topChunks = scored.slice(0, topK);
+    if (scored.length === 0) return '';
 
-        return topChunks
-            .map((c, i) => `[Source: ${c.source}]\n${c.text}`)
-            .join('\n\n---\n\n');
-    } catch (err) {
-        console.error('[RAG] Retrieval error:', err);
-        return '';
-    }
+    return scored
+        .map(({ chunk }) => `[Source: ${chunk.source}]\n${chunk.text}`)
+        .join('\n\n---\n\n');
 }

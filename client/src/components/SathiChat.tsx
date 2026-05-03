@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Send, Bot, User, Sparkles, Mic, MicOff, Paperclip, ImageIcon } from "lucide-react";
+import { X, Send, Bot, User, Sparkles, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {
     id: string;
     role: "user" | "assistant";
     text: string;
-    imageUrl?: string; // for user-uploaded images
+    imageUrl?: string;
 }
 
 interface SathiChatProps {
@@ -16,69 +16,26 @@ interface SathiChatProps {
     onClose: () => void;
 }
 
-// Extend Window for SpeechRecognition
-declare global {
-    interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
-    }
-}
-
 export function SathiChat({ isOpen, onClose }: SathiChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "welcome",
             role: "assistant",
-            text: "Hi! I'm Sathi, your academic companion. Ask me anything from your course materials, upload an image of a problem, or just talk — I'm here to help! 📚",
+            text: "Hi! I'm Sathi, your academic companion. Ask me anything from your course materials, or upload an image of a problem — I'm here to help! 📚",
         },
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
-    const [isListening, setIsListening] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
-
-    // ── Speech-to-Text Setup ────────────────────────────────────────────────
-    const toggleListening = () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Speech recognition is not supported in your browser. Try Chrome or Edge.");
-            return;
-        }
-
-        if (isListening) {
-            recognitionRef.current?.stop();
-            setIsListening(false);
-            return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = "en-IN";
-        recognition.continuous = false;
-        recognition.interimResults = true;
-
-        recognition.onstart = () => setIsListening(true);
-        recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => setIsListening(false);
-        recognition.onresult = (event: any) => {
-            const transcript = Array.from(event.results)
-                .map((r: any) => r[0].transcript)
-                .join("");
-            setInput(transcript);
-        };
-
-        recognitionRef.current = recognition;
-        recognition.start();
-    };
 
     // ── Image Upload ────────────────────────────────────────────────────────
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,12 +49,10 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
             alert("Image must be under 5MB.");
             return;
         }
-
         const reader = new FileReader();
         reader.onload = (ev) => {
             const dataUrl = ev.target?.result as string;
             setImagePreview(dataUrl);
-            // Strip the "data:image/...;base64," prefix for the API
             setImageBase64(dataUrl.split(",")[1]);
         };
         reader.readAsDataURL(file);
@@ -113,7 +68,7 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
     const handleSend = async () => {
         if ((!input.trim() && !imageBase64) || loading) return;
 
-        const userText = input.trim() || (imageBase64 ? "Please analyze this image." : "");
+        const userText = input.trim() || "Please analyze this image.";
         const userMsg: Message = {
             id: Date.now().toString(),
             role: "user",
@@ -163,7 +118,7 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
         <>
             {/* Backdrop */}
             {isOpen && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
+                <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
             )}
 
             {/* Chat Panel */}
@@ -179,7 +134,7 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
                         </div>
                         <div>
                             <h3 className="font-bold text-base">Sathi Assistant</h3>
-                            <p className="text-[11px] text-white/75 leading-none mt-0.5">RAG · Vision · Voice</p>
+                            <p className="text-[11px] text-white/75 leading-none mt-0.5">RAG · Vision · Powered by Groq</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-1">
@@ -190,7 +145,7 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
                 {/* RAG Badge */}
                 <div className="px-4 py-2 bg-indigo-950/60 border-b border-indigo-500/20 text-xs text-indigo-300 flex items-center gap-2 shrink-0">
                     <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-                    Course-grounded answers · Image analysis · Voice input enabled
+                    Course-grounded answers · Image analysis · Ultra-fast Groq inference
                 </div>
 
                 {/* Messages */}
@@ -208,7 +163,6 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
                                     {msg.role === "user" ? <User size={13} /> : <Bot size={13} />}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    {/* User image attachment */}
                                     {msg.imageUrl && (
                                         <img
                                             src={msg.imageUrl}
@@ -265,8 +219,8 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
                 </div>
 
                 {/* Quick Prompts */}
-                <div className="px-4 py-2 bg-[#0e1117] border-t border-white/5 flex gap-2 overflow-x-auto shrink-0">
-                    {["Explain AIML", "What is robotics?", "Help me study", "Motivation boost"].map(q => (
+                <div className="px-4 py-2 bg-[#0e1117] border-t border-white/5 flex gap-2 overflow-x-auto shrink-0 scrollbar-hide">
+                    {["Explain AI concepts", "What is robotics?", "Help me study", "Motivation boost"].map(q => (
                         <button
                             key={q}
                             onClick={() => setInput(q)}
@@ -293,19 +247,6 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
 
                 {/* Input Bar */}
                 <div className="p-4 bg-[#0e1117] border-t border-white/10 shrink-0">
-                    {/* Voice listening indicator */}
-                    {isListening && (
-                        <div className="flex items-center gap-2 mb-2 px-2">
-                            <div className="flex gap-0.5">
-                                {[0, 1, 2, 3].map(i => (
-                                    <div key={i} className="w-1 bg-red-400 rounded-full animate-bounce"
-                                        style={{ height: `${8 + i * 4}px`, animationDelay: `${i * 0.1}s` }} />
-                                ))}
-                            </div>
-                            <span className="text-red-400 text-xs font-medium">Listening... speak now</span>
-                        </div>
-                    )}
-
                     <form
                         onSubmit={e => { e.preventDefault(); handleSend(); }}
                         className="flex items-center gap-2 bg-[#1a1f2e] rounded-xl px-3 py-2.5 border border-white/5 focus-within:border-indigo-500/50 transition-colors"
@@ -334,24 +275,9 @@ export function SathiChat({ isOpen, onClose }: SathiChatProps) {
                             type="text"
                             value={input}
                             onChange={e => setInput(e.target.value)}
-                            placeholder={isListening ? "Listening..." : "Ask about your syllabus or upload an image..."}
+                            placeholder="Ask about your syllabus or upload an image..."
                             className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-gray-500 min-w-0"
                         />
-
-                        {/* Mic button */}
-                        <button
-                            type="button"
-                            onClick={toggleListening}
-                            className={cn(
-                                "shrink-0 p-1 rounded-lg transition-all",
-                                isListening
-                                    ? "text-red-400 bg-red-500/10 animate-pulse"
-                                    : "text-gray-500 hover:text-indigo-400"
-                            )}
-                            title={isListening ? "Stop listening" : "Voice input"}
-                        >
-                            {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                        </button>
 
                         {/* Send button */}
                         <button

@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getDB } from '../data/db';
 import { calculateRisk } from '../risk/engine';
-import { generateRAGResponseWithImage } from '../services/gemini';
+import { generateRAGResponseWithImage } from '../services/llm';
 import { retrieveContext } from '../services/ragService';
 import { verifyFirebaseToken, isFirebaseEnabled } from '../firebaseAuth';
 

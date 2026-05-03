@@ -343,8 +343,8 @@ export default function StudentDashboard() {
 
                             {/* Notification Dropdown */}
                             {bellOpen && (
-                                <div className="absolute right-0 top-12 z-50 w-[380px] max-h-[500px] overflow-y-auto bg-[#0e1117] border border-white/10 rounded-2xl shadow-2xl shadow-black/60">
-                                    <div className="sticky top-0 bg-[#0e1117] border-b border-white/10 px-5 py-4 flex items-center justify-between">
+                                <div className="absolute right-0 top-12 z-[100] w-[380px] max-h-[500px] overflow-y-auto bg-[#0d1117] border border-white/15 rounded-2xl shadow-2xl shadow-black isolate">
+                                    <div className="sticky top-0 bg-[#0d1117] border-b border-white/10 px-5 py-4 flex items-center justify-between">
                                         <h3 className="text-sm font-bold text-white flex items-center gap-2">
                                             <Bell size={16} className="text-indigo-400" /> Notifications
                                         </h3>
@@ -355,7 +355,7 @@ export default function StudentDashboard() {
                                             <p className="text-gray-500 text-sm text-center py-10">No notifications yet.</p>
                                         ) : (
                                             notifications.map((notif: any) => (
-                                                <div key={notif.id} className="p-4 rounded-xl bg-white/5 border border-white/5 relative">
+                                                <div key={notif.id} className="p-4 rounded-xl bg-[#161b27] border border-white/10 relative">
                                                     {notif.studentId === 'ALL' && (
                                                         <span className="absolute top-3 right-3 text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider font-bold">Broadcast</span>
                                                     )}

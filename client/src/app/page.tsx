@@ -59,8 +59,14 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || err.response?.data?.error || "Login failed. Please check your credentials.");
+      // Axios wraps 4xx responses as errors — extract the server message cleanly
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message;
+      const userMsg = serverMsg
+        ? serverMsg
+        : err?.message?.includes('401') || err?.response?.status === 401
+          ? 'Invalid credentials. Check your Roll Number and Date of Birth.'
+          : err?.message || 'Login failed. Please try again.';
+      setError(userMsg);
     } finally {
       setIsLoading(false);
     }
