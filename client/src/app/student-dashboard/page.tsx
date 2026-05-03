@@ -104,6 +104,19 @@ export default function StudentDashboard() {
     const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
     const [raisingHand, setRaisingHand] = useState(false);
     const [sathiOpen, setSathiOpen] = useState(false);
+    const [bellOpen, setBellOpen] = useState(false);
+    const bellRef = useRef<HTMLDivElement>(null);
+
+    // Close bell dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+                setBellOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Pick a random quote once per session
     const quote = useMemo(() => MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)], []);
@@ -291,6 +304,61 @@ export default function StudentDashboard() {
                             <Sparkles size={16} className="text-indigo-400" />
                             Sathi Assistant
                         </button>
+
+                        {/* Bell Notification Button */}
+                        <div className="relative" ref={bellRef}>
+                            <button
+                                onClick={() => setBellOpen(prev => !prev)}
+                                className="relative p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all"
+                            >
+                                <Bell size={20} />
+                                {notifications.length > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Notification Dropdown */}
+                            {bellOpen && (
+                                <div className="absolute right-0 top-12 z-50 w-[380px] max-h-[500px] overflow-y-auto bg-[#0e1117] border border-white/10 rounded-2xl shadow-2xl shadow-black/60">
+                                    <div className="sticky top-0 bg-[#0e1117] border-b border-white/10 px-5 py-4 flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                            <Bell size={16} className="text-indigo-400" /> Notifications
+                                        </h3>
+                                        <span className="text-xs text-gray-500">{notifications.length} message{notifications.length !== 1 ? 's' : ''}</span>
+                                    </div>
+                                    <div className="p-3 space-y-3">
+                                        {notifications.length === 0 ? (
+                                            <p className="text-gray-500 text-sm text-center py-10">No notifications yet.</p>
+                                        ) : (
+                                            notifications.map((notif: any) => (
+                                                <div key={notif.id} className="p-4 rounded-xl bg-white/5 border border-white/5 relative">
+                                                    {notif.studentId === 'ALL' && (
+                                                        <span className="absolute top-3 right-3 text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider font-bold">Broadcast</span>
+                                                    )}
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                                                            {notif.teacherName?.charAt(0) || 'G'}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-white leading-tight">{notif.teacherName || 'Guru'}</p>
+                                                            <p className="text-xs text-indigo-400">{notif.teacherSubject || 'Department'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-gray-300 text-sm leading-relaxed">{notif.message}</p>
+                                                    <p className="text-xs text-gray-500 mt-2 text-right">
+                                                        {new Date(notif.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                                    </p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <button onClick={handleLogout} className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium flex items-center gap-2 border border-red-500/20">
                             <LogOut size={16} /> Logout
                         </button>
@@ -343,10 +411,10 @@ export default function StudentDashboard() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 gap-8">
 
-                    {/* Left Column: Academic Tracking */}
-                    <div className="lg:col-span-2 space-y-6">
+                    {/* Academic Tracking — full width */}
+                    <div className="space-y-6">
 
                         {/* Subject Selector */}
                         <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
@@ -438,44 +506,7 @@ export default function StudentDashboard() {
                         </div>
                     </div>
 
-                    {/* Right Column: Notifications */}
-                    <div className="space-y-6">
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-[calc(100vh-140px)] overflow-y-auto">
-                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <Bell size={20} className="text-indigo-400" /> Notifications
-                            </h2>
-                            <div className="space-y-4">
-                                {notifications.length === 0 ? (
-                                    <p className="text-gray-500 text-sm text-center py-8">No notifications yet.</p>
-                                ) : (
-                                    notifications.map((notif: any) => (
-                                        <div key={notif.id} className="p-5 rounded-xl bg-gradient-to-br from-black/60 to-black/40 border border-white/10 relative shadow-lg">
-                                            {notif.studentId === 'ALL' && (
-                                                <span className="absolute top-4 right-4 text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider font-bold">
-                                                    Broadcast
-                                                </span>
-                                            )}
-                                            <div className="flex items-center gap-3 mb-3 border-b border-white/5 pb-3">
-                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-lg font-bold text-white shadow-md shadow-indigo-500/20">
-                                                    {notif.teacherName?.charAt(0) || 'G'}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-bold text-white">{notif.teacherName || 'Guru'}</p>
-                                                    <p className="text-xs font-medium text-indigo-400">{notif.teacherSubject || 'Department'}</p>
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-200 text-[15px] leading-relaxed bg-white/5 p-4 rounded-lg border border-white/5">
-                                                {notif.message}
-                                            </p>
-                                            <p className="text-xs font-medium text-gray-500 mt-3 text-right">
-                                                {new Date(notif.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                                            </p>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
+
 
                 </div>
             </div>

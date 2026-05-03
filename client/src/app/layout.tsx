@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { TopNav } from "@/components/TopNav";
-import { SathiChat } from "@/components/SathiChat";
 import "./globals.css";
 
-// Using Inter/Outfit font via Google Fonts would be ideal if allowed, but strict defaults for now.
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,7 +24,6 @@ export default function RootLayout({
       >
         <TopNav />
         {children}
-        <SathiChat />
       </body>
     </html>
   );

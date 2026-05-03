@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="black" rx="32"/>
+  <!-- Diamond top -->
+  <polygon points="100,18 114,38 100,52 86,38" fill="white"/>
+  <!-- M body: left outer curl, left arm, center dip, right arm, right outer curl -->
+  <!-- Left curl (circular scroll) -->
+  <path d="
+    M 36,160
+    C 20,160 12,148 14,134
+    C 16,120 28,112 40,118
+    C 52,124 54,140 46,150
+    C 40,158 32,158 28,152
+  " stroke="white" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Right curl -->
+  <path d="
+    M 164,160
+    C 180,160 188,148 186,134
+    C 184,120 172,112 160,118
+    C 148,124 146,140 154,150
+    C 160,158 168,158 172,152
+  " stroke="white" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Left arm up from curl to top-left -->
+  <path d="M 40,122 L 68,70" stroke="white" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Right arm up from curl to top-right -->
+  <path d="M 160,122 L 132,70" stroke="white" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Center V dip: left arm down to center, right arm down to center -->
+  <path d="M 68,70 L 100,118 L 132,70" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

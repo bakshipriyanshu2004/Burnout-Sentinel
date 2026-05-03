@@ -2,8 +2,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { GraduationCap, LayoutDashboard, Users, Bell, Search, UserCircle, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Bell, Search, UserCircle, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -29,9 +30,9 @@ export function TopNav() {
                     </button>
                 )}
 
-                <Link href={isStudentDashboard ? "/student-dashboard" : "/admin-dashboard"} className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-                        <GraduationCap size={20} />
+                <Link href={isStudentDashboard ? "/student-dashboard" : "/admin-dashboard"} className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden bg-black border border-white/10 shadow-lg">
+                        <Image src="/logo.svg" alt="Baal Mantra Logo" width={36} height={36} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-white leading-none hidden sm:block">Baal Mantra</h1>
